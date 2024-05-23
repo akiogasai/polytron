@@ -10,9 +10,7 @@ pub struct Color {
 
 impl Color {
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-        Self {
-            r, g, b, a
-        }
+        Self { r, g, b, a }
     }
 
     pub fn white() -> Color {
@@ -52,9 +50,9 @@ impl Default for Color {
 
 impl PartialEq for Color {
     fn eq(&self, other: &Color) -> bool {
-            (self.r - other.r).abs() < 1.0e-3 &&
-            (self.g - other.g).abs() < 1.0e-3 &&
-            (self.b - other.b).abs() < 1.0e-3
+        (self.r - other.r).abs() < 1.0e-3 &&
+        (self.g - other.g).abs() < 1.0e-3 &&
+        (self.b - other.b).abs() < 1.0e-3
     }
 }
 
@@ -116,7 +114,6 @@ impl Mul for Color {
 }
 
 impl MulAssign for Color {
-
     fn mul_assign(&mut self, rhs: Self) {
         self.r *= rhs.r;
         self.g *= rhs.g;
@@ -161,7 +158,6 @@ impl Div for Color {
 }
 
 impl DivAssign for Color {
-
     fn div_assign(&mut self, rhs: Self) {
         self.r /= rhs.r;
         self.g /= rhs.g;
@@ -222,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn substracting_colors() {
+    fn subtracting_colors() {
         let c1 = Color::new(0.9, 0.6, 0.75, 1.0);
         let c2 = Color::new(0.7, 0.1, 0.25, 1.0);
         let c3 = c1 - c2;
@@ -265,5 +261,35 @@ mod tests {
         let c2 = Color::new(0.9, 1.0, 0.1, 1.0);
         c1 *= c2;
         assert_eq!(c1, Color::new(0.9, 0.2, 0.04, 1.0));
+    }
+
+    #[test]
+    fn dividing_color_by_a_scalar() {
+        let c = Color::new(0.8, 0.6, 0.4, 1.0);
+        let c2 = c / 2.0;
+        assert_eq!(c2, Color::new(0.4, 0.3, 0.2, 0.5));
+    }
+
+    #[test]
+    fn div_assign_color_by_a_scalar() {
+        let mut c = Color::new(0.8, 0.6, 0.4, 1.0);
+        c /= 2.0;
+        assert_eq!(c, Color::new(0.4, 0.3, 0.2, 0.5));
+    }
+
+    #[test]
+    fn dividing_colors() {
+        let c1 = Color::new(0.8, 0.6, 0.4, 1.0);
+        let c2 = Color::new(0.4, 0.3, 0.2, 0.5);
+        let c3 = c1 / c2;
+        assert_eq!(c3, Color::new(2.0, 2.0, 2.0, 2.0));
+    }
+
+    #[test]
+    fn div_assign_colors() {
+        let mut c1 = Color::new(0.8, 0.6, 0.4, 1.0);
+        let c2 = Color::new(0.4, 0.3, 0.2, 0.5);
+        c1 /= c2;
+        assert_eq!(c1, Color::new(2.0, 2.0, 2.0, 2.0));
     }
 }
