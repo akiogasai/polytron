@@ -1,7 +1,5 @@
 use std::f32::consts::PI;
-
 use glam::{vec2, vec3, Mat4, Vec2, Vec3, Vec4Swizzles};
-
 use crate::{color::Color, object::Object, renderer::{DrawCall, Mode, Primitive, RendererData, IMAGE_RATIO_XY, IMAGE_RES}};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -60,7 +58,7 @@ impl Camera3d {
             projection,
             viewport: Rect2d {
                 position: vec2(0.0, 0.0),
-                size: vec2(1.0, 1.0)
+                size: vec2(1.0, 1.0),
             },
             background: Color::black(),
         }
@@ -72,7 +70,7 @@ impl Camera3d {
             PI / 4.0, 
             (viewport.size.x / viewport.size.y) * IMAGE_RATIO_XY, 
             0.01, 
-            100.0
+            100.0,
         );
         self
     }
@@ -107,7 +105,7 @@ impl Camera3d {
         self
     }
 
-    pub fn with_scale(&mut self, scale: Vec3) -> &mut Self {
+    pub fn with_scale(mut self, scale: Vec3) -> Self {
         self.transform = Mat4::from_scale(scale) * self.transform;
         self
     }
@@ -180,7 +178,7 @@ impl Camera for Camera2d {
 impl Camera2d {
     pub fn new() -> Self {
         let transform = Mat4::IDENTITY;
-        let projection = glam::Mat4::orthographic_rh_gl(
+        let projection = Mat4::orthographic_rh_gl(
             0.0, 
             IMAGE_RES.x as f32, 
             IMAGE_RES.y as f32, 
@@ -194,7 +192,7 @@ impl Camera2d {
             projection,
             viewport: Rect2d {
                 position: vec2(0.0, 0.0),
-                size: vec2(1.0, 1.0)
+                size: vec2(1.0, 1.0),
             },
             background: Color::black(),
         }
@@ -211,11 +209,13 @@ impl Camera2d {
     }
 }
 
+/// Provides methods for rendering graphics.
 pub struct Graphics<'a> {
     pub data: &'a mut RendererData,
 }
 
 impl<'a> Graphics<'a> {
+    /// Sets the camera for rendering.
     pub fn set_camera(&mut self, camera: &dyn Camera) -> &mut Self {
         self.data.view_proj = camera.view_proj();
         self.data.mode = camera.mode();
@@ -224,6 +224,7 @@ impl<'a> Graphics<'a> {
         self
     }
 
+    /// Draws an object.
     pub fn draw_object(&mut self, object: &Object) -> &mut Self {
         self.new_draw_call(
             object.vertices(),
@@ -233,6 +234,7 @@ impl<'a> Graphics<'a> {
         )
     }
 
+    /// Draws a line between two points with a specified color.
     pub fn draw_line(&mut self, p1: Vec3, p2: Vec3, color: Color) -> &mut Self {
         self.new_draw_call(
             &vec![
@@ -246,15 +248,14 @@ impl<'a> Graphics<'a> {
                     color: color.as_array(),
                     normal: [0.0, 0.0, 0.0],
                 },
-            ], 
-            &vec![
-                0, 1,
-            ], 
+            ],
+            &vec![0, 1],
             &Mat4::IDENTITY,
             Primitive::Lines,
         )
     }
 
+    /// Draws a rectangle at the specified position and size with a specified color.
     pub fn draw_rectangle(&mut self, position: Vec2, size: Vec2, color: Color) -> &mut Self {
         self.new_draw_call(
             &vec![
@@ -278,28 +279,27 @@ impl<'a> Graphics<'a> {
                     color: color.as_array(),
                     normal: [0.0, 0.0, 0.0],
                 },
-            ], 
-            &vec![
-                0, 1, 2, 1, 2, 3,
-            ], 
+            ],
+            &vec![0, 1, 2, 1, 2, 3],
             &Mat4::IDENTITY,
             Primitive::Triangles,
         )
     }
 
+    /// Creates a new draw call for rendering.
     fn new_draw_call(
-        &mut self, 
-        vertices: &Vec<Vertex>, 
-        indices: &Vec<i32>, 
-        transform: &Mat4, 
-        primitive: Primitive, 
+        &mut self,
+        vertices: &Vec<Vertex>,
+        indices: &Vec<i32>,
+        transform: &Mat4,
+        primitive: Primitive,
     ) -> &mut Self {
         let previous_dc = if self.data.draw_calls_count == 0 {
             None
         } else {
             self.data.draw_calls.get(self.data.draw_calls_count - 1)
-        }
-        ;
+        };
+
         if previous_dc.map_or(true, |draw_call| {
             draw_call.model != *transform ||
             draw_call.view_proj != self.data.view_proj ||
@@ -307,9 +307,9 @@ impl<'a> Graphics<'a> {
             draw_call.mode != self.data.mode ||
             draw_call.viewport != self.data.viewport
         }) {
-            // start a new draw call
+            // Start a new draw call
             if self.data.draw_calls.len() <= self.data.draw_calls_count {
-                // brand new draw call
+                // Brand new draw call
                 self.data.draw_calls.push(
                     DrawCall {
                         vertices: vertices.clone(),
@@ -323,7 +323,7 @@ impl<'a> Graphics<'a> {
                     }
                 );
             } else {
-                // reuse empty draw call
+                // Reuse empty draw call
                 self.data.draw_calls[self.data.draw_calls_count].vertices = vertices.clone();
                 self.data.draw_calls[self.data.draw_calls_count].indices = indices.clone();
                 self.data.draw_calls[self.data.draw_calls_count].model = *transform;
@@ -343,12 +343,11 @@ impl<'a> Graphics<'a> {
                 })
                 .collect();
 
-            // complete existing draw call
+            // Complete existing draw call
             self.data.draw_calls[self.data.draw_calls_count - 1].indices.append(
                 &mut new_indices
             );
             self.data.draw_calls[self.data.draw_calls_count - 1].vertices.append(&mut vertices.clone());
-
         }
         
         self
