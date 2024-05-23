@@ -181,9 +181,9 @@ impl Renderer {
         );
 
         let pipelines = [
-            triangles_pipeline_3d, 
+            triangles_pipeline_3d,
             lines_pipeline_3d,
-            triangles_pipeline_2d, 
+            triangles_pipeline_2d,
             lines_pipeline_2d,
         ];
 
@@ -213,14 +213,14 @@ impl Renderer {
         };
 
         let display_shader = ctx
-        .new_shader(
-            ShaderSource::Glsl {
-                vertex: display_shader::VERTEX,
-                fragment: display_shader::FRAGMENT,
-            },
-            display_shader::meta(),
-        )
-        .unwrap();
+            .new_shader(
+                ShaderSource::Glsl {
+                    vertex: display_shader::VERTEX,
+                    fragment: display_shader::FRAGMENT,
+                },
+                display_shader::meta(),
+            )
+            .unwrap();
 
         let display_pipeline = ctx.new_pipeline(
             &[BufferLayout::default()],
@@ -242,10 +242,12 @@ impl Renderer {
         }
     }
 
+    /// Sets the screen resolution for the renderer.
     pub fn set_screen_resolution(&mut self, screen_res: UVec2) {
         self.screen_res = screen_res;
     }
 
+    /// Draws the current frame data.
     pub fn draw(&mut self, data: &mut RendererData) {
         for _ in 0..data.draw_calls.len() - data.draw_calls_binding.len() {
             let vertex_buffer = self.ctx.new_buffer(
@@ -269,7 +271,7 @@ impl Renderer {
             data.draw_calls_binding.push(bindings);
         }
 
-        // offscreen pass
+        // Offscreen pass
         self.ctx.begin_pass(
             Some(self.offscreen_pass),
             PassAction::clear_color(
@@ -283,12 +285,12 @@ impl Renderer {
             .iter()
             .zip(data.draw_calls_binding.iter()) {
                 self.ctx.buffer_update(
-                    bindings.vertex_buffers[0], 
+                    bindings.vertex_buffers[0],
                     BufferSource::slice(&draw.vertices)
                 );
 
                 self.ctx.buffer_update(
-                    bindings.index_buffer, 
+                    bindings.index_buffer,
                     BufferSource::slice(&draw.indices)
                 );
 
@@ -304,15 +306,15 @@ impl Renderer {
                 self.ctx.apply_uniforms(UniformsSource::table(&vs_params));
 
                 self.ctx.apply_scissor_rect(
-                    (draw.viewport.position.x * IMAGE_RES.x as f32) as i32, 
+                    (draw.viewport.position.x * IMAGE_RES.x as f32) as i32,
                     (draw.viewport.position.y * IMAGE_RES.y as f32) as i32,
-                    (draw.viewport.size.x * IMAGE_RES.x as f32) as i32, 
+                    (draw.viewport.size.x * IMAGE_RES.x as f32) as i32,
                     (draw.viewport.size.y * IMAGE_RES.y as f32) as i32,
                 );
                 self.ctx.apply_viewport(
-                    (draw.viewport.position.x * IMAGE_RES.x as f32) as i32, 
+                    (draw.viewport.position.x * IMAGE_RES.x as f32) as i32,
                     (draw.viewport.position.y * IMAGE_RES.y as f32) as i32,
-                    (draw.viewport.size.x * IMAGE_RES.x as f32) as i32, 
+                    (draw.viewport.size.x * IMAGE_RES.x as f32) as i32,
                     (draw.viewport.size.y * IMAGE_RES.y as f32) as i32,
                 );
                 let background = draw.background;
@@ -322,9 +324,9 @@ impl Renderer {
                             background.r,
                             background.g,
                             background.b,
-                            background.a    
+                            background.a
                         )),
-                        None, 
+                        None,
                         None
                     );
                     previous_background = background;
@@ -334,21 +336,21 @@ impl Renderer {
 
         self.ctx.end_render_pass();
 
-        // draw to fullscreen quad
+        // Draw to fullscreen quad
         {
-            // display pass
+            // Display pass
             self.ctx.begin_default_pass(Default::default());
             self.ctx.apply_pipeline(&self.display_pipeline);
             self.ctx.apply_bindings(&self.display_bind);
             let scale = if self.screen_res.x as f32 / self.screen_res.y as f32 > IMAGE_RATIO_XY {
                 vec3(
                     (self.screen_res.y as f32 / self.screen_res.x as f32) * IMAGE_RATIO_XY,
-                    1.0, 
+                    1.0,
                     1.0
                 )
             } else {
                 vec3(
-                    1.0,  
+                    1.0,
                     (self.screen_res.x as f32 / self.screen_res.y as f32) * IMAGE_RATIO_YX,
                     1.0
                 )
@@ -362,21 +364,22 @@ impl Renderer {
         }
     }
 
+    /// Draws the user interface.
     pub fn draw_ui(&mut self, gui: &mut Gui) {
         let mq_texture = self.ctx.render_pass_texture(self.offscreen_pass);
-        // create egui TextureId from Miniquad GL texture Id
+        // Create egui TextureId from Miniquad GL texture Id
         let raw_id = match unsafe { self.ctx.texture_raw_id(mq_texture) } {
             miniquad::RawId::OpenGl(id) => id as u64,
         };
         let egui_texture_id = egui::TextureId::User(raw_id);
 
-        // prepare drawing the ui by clearing background
+        // Prepare drawing the UI by clearing background
         self.ctx.begin_default_pass(
             miniquad::PassAction::clear_color(0.0, 0.0, 0.0, 1.0)
         );
         self.ctx.end_render_pass();
 
-        // run the ui code
+        // Run the UI code
         self.egui_mq.run(&mut *self.ctx, |_mq_ctx, egui_ctx| {
             gui.draw(egui_ctx, egui_texture_id);
         });
@@ -384,14 +387,17 @@ impl Renderer {
         self.egui_mq.draw(&mut *self.ctx);
     }
 
+    /// Commits the frame and presents it on the screen.
     pub fn commit_frame(&mut self) {
         self.ctx.commit_frame();
     }
 
+    /// Returns a mutable reference to the EguiMq instance.
     pub fn egui_mq_mut(&mut self) -> &mut EguiMq {
         &mut self.egui_mq
     }
 
+    /// Gets the appropriate pipeline for the given primitive and mode.
     fn get_pipeline(&self, primitive: Primitive, mode: Mode) -> Pipeline {
         match mode {
             Mode::Mode3d => {
@@ -407,7 +413,6 @@ impl Renderer {
                 }
             },
         }
-        
     }
 }
 
@@ -532,10 +537,10 @@ mod display_shader {
     pub fn meta() -> ShaderMeta {
         ShaderMeta {
             images: vec!["tex".to_string()],
-            uniforms: UniformBlockLayout { 
+            uniforms: UniformBlockLayout {
                 uniforms: vec![
                     UniformDesc::new("model", UniformType::Mat4),
-                ] 
+                ]
             },
         }
     }
