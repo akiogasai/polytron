@@ -13,7 +13,6 @@ impl Cube {
         let p6 = [-0.5, 0.5, 0.5];
         let p7 = [0.5, 0.5, 0.5];
 
-
         vec![
             // face 1 -z
             Vertex {
