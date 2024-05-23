@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use glam::Vec2;
 
 pub struct Inputs {
